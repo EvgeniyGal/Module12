@@ -6,7 +6,6 @@ import java.util.stream.IntStream;
 
 public class GameFizzBuzz {
 
-
     public static void main(String[] args) {
 
         CyclicBarrier cyclicBarrier = new CyclicBarrier(5);
@@ -21,25 +20,29 @@ public class GameFizzBuzz {
 
         IntStream stream = IntStream.rangeClosed(1, gameCapacity);
 
-        stream.forEach((v) -> {
+        stream.forEach((curNumber) -> {
 
-            new Thread(new Fizz(v, cyclicBarrier)).start();
-            new Thread(new Buzz(v, cyclicBarrier)).start();
-            new Thread(new FizzBuzz(v, cyclicBarrier)).start();
-            new Thread(new SimpleNumber(v, cyclicBarrier)).start();
+            new Thread(new FizzBuzzThread(curNumber, "Fizz", cyclicBarrier,
+                    (number) -> number % 3 == 0 && number % 5 != 0)).start();
+
+            new Thread(new FizzBuzzThread(curNumber, "Buzz", cyclicBarrier,
+                    (number) -> number % 3 != 0 && number % 5 == 0)).start();
+
+            new Thread(new FizzBuzzThread(curNumber, "FizzBuzz", cyclicBarrier,
+                    (number) -> number % 3 == 0 && number % 5 == 0)).start();
+
+            new Thread(new FizzBuzzThread(curNumber, String.valueOf(curNumber), cyclicBarrier,
+                    (number) -> number % 3 != 0 && number % 5 != 0)).start();
 
             try {
+                Thread.sleep(400);
                 cyclicBarrier.await();
             } catch (InterruptedException | BrokenBarrierException e) {
                 e.printStackTrace();
             }
 
-            System.out.print(", ");
-
-            try {
-                Thread.sleep(400);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            if (curNumber < gameCapacity) {
+                System.out.print(", ");
             }
 
         });
@@ -48,21 +51,26 @@ public class GameFizzBuzz {
 
 }
 
-class Fizz implements Runnable {
+class FizzBuzzThread implements Runnable {
 
-    int checkNumber;
+    int number;
+    String printValue;
     CyclicBarrier cyclicBarrier;
+    FizzBuzzCondition FBCondition;
 
-    public Fizz(int checkNumber, CyclicBarrier cyclicBarrier) {
-        this.checkNumber = checkNumber;
+    public FizzBuzzThread(int number, String printValue, CyclicBarrier cyclicBarrier,
+                          FizzBuzzCondition FBCondition) {
+        this.number = number;
         this.cyclicBarrier = cyclicBarrier;
+        this.FBCondition = FBCondition;
+        this.printValue = printValue;
     }
 
     @Override
     public void run() {
 
-        if (checkNumber % 3 == 0 && checkNumber % 5 != 0) {
-            System.out.print("fizz");
+        if (FBCondition.checkNumber(number)) {
+            System.out.print(printValue);
         }
 
         try {
@@ -75,85 +83,7 @@ class Fizz implements Runnable {
 
 }
 
-class Buzz implements Runnable {
-
-    int checkNumber;
-    CyclicBarrier cyclicBarrier;
-
-
-    public Buzz(int checkNumber, CyclicBarrier cyclicBarrier) {
-        this.checkNumber = checkNumber;
-        this.cyclicBarrier = cyclicBarrier;
-    }
-
-    @Override
-    public void run() {
-
-        if (checkNumber % 3 != 0 && checkNumber % 5 == 0) {
-            System.out.print("buzz");
-        }
-
-
-        try {
-            cyclicBarrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-}
-
-class FizzBuzz implements Runnable {
-
-    int checkNumber;
-    CyclicBarrier cyclicBarrier;
-
-    public FizzBuzz(int checkNumber, CyclicBarrier cyclicBarrier) {
-        this.checkNumber = checkNumber;
-        this.cyclicBarrier = cyclicBarrier;
-    }
-
-    @Override
-    public void run() {
-
-        if (checkNumber % 3 == 0 && checkNumber % 5 == 0) {
-            System.out.print("fizzbuzz");
-        }
-
-        try {
-            cyclicBarrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-}
-
-
-class SimpleNumber implements Runnable {
-
-    int checkNumber;
-    CyclicBarrier cyclicBarrier;
-
-    public SimpleNumber(int checkNumber, CyclicBarrier cyclicBarrier) {
-        this.checkNumber = checkNumber;
-        this.cyclicBarrier = cyclicBarrier;
-    }
-
-    @Override
-    public void run() {
-
-        if (checkNumber % 3 != 0 && checkNumber % 5 != 0) {
-            System.out.print(checkNumber);
-        }
-
-        try {
-            cyclicBarrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
-        }
-
-    }
+@FunctionalInterface
+interface FizzBuzzCondition {
+    boolean checkNumber(int number);
 }
