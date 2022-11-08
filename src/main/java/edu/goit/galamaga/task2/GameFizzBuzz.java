@@ -1,14 +1,13 @@
 package edu.goit.galamaga.task2;
 
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.IntStream;
 
 public class GameFizzBuzz {
 
     public static void main(String[] args) {
 
-        CyclicBarrier cyclicBarrier = new CyclicBarrier(5);
+        CountDownLatch countDownLatch = new CountDownLatch(4);
 
         int gameCapacity;
 
@@ -22,22 +21,22 @@ public class GameFizzBuzz {
 
         stream.forEach((curNumber) -> {
 
-            new Thread(new FizzBuzzThread(curNumber, "Fizz", cyclicBarrier,
+            new Thread(new FizzBuzzThread(curNumber, "Fizz", countDownLatch,
                     (number) -> number % 3 == 0 && number % 5 != 0)).start();
 
-            new Thread(new FizzBuzzThread(curNumber, "Buzz", cyclicBarrier,
+            new Thread(new FizzBuzzThread(curNumber, "Buzz", countDownLatch,
                     (number) -> number % 3 != 0 && number % 5 == 0)).start();
 
-            new Thread(new FizzBuzzThread(curNumber, "FizzBuzz", cyclicBarrier,
+            new Thread(new FizzBuzzThread(curNumber, "FizzBuzz", countDownLatch,
                     (number) -> number % 3 == 0 && number % 5 == 0)).start();
 
-            new Thread(new FizzBuzzThread(curNumber, String.valueOf(curNumber), cyclicBarrier,
+            new Thread(new FizzBuzzThread(curNumber, String.valueOf(curNumber), countDownLatch,
                     (number) -> number % 3 != 0 && number % 5 != 0)).start();
 
             try {
                 Thread.sleep(400);
-                cyclicBarrier.await();
-            } catch (InterruptedException | BrokenBarrierException e) {
+                countDownLatch.await();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
@@ -55,13 +54,13 @@ class FizzBuzzThread implements Runnable {
 
     int number;
     String printValue;
-    CyclicBarrier cyclicBarrier;
+    CountDownLatch countDownLatch;
     FizzBuzzCondition FBCondition;
 
-    public FizzBuzzThread(int number, String printValue, CyclicBarrier cyclicBarrier,
+    public FizzBuzzThread(int number, String printValue, CountDownLatch countDownLatch,
                           FizzBuzzCondition FBCondition) {
         this.number = number;
-        this.cyclicBarrier = cyclicBarrier;
+        this.countDownLatch = countDownLatch;
         this.FBCondition = FBCondition;
         this.printValue = printValue;
     }
@@ -73,11 +72,7 @@ class FizzBuzzThread implements Runnable {
             System.out.print(printValue);
         }
 
-        try {
-            cyclicBarrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
-        }
+        countDownLatch.countDown();
 
     }
 
