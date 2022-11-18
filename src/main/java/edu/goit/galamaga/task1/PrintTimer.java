@@ -1,14 +1,14 @@
 package edu.goit.galamaga.task1;
 
 import java.time.*;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class PrintTimer {
 
-    public static void main(String[] args) {
+    private static final long startTime = Clock.systemUTC().millis();
 
-        long startTime = Clock.systemUTC().millis();
+    public static void main(String[] args) {
 
         long programLifeTime;
 
@@ -18,36 +18,27 @@ public class PrintTimer {
             programLifeTime = 20000;
         }
 
-        TimerTask printTimeDuration = new TimerTask() {
-            @Override
-            public void run() {
-                Duration duration = Duration.ofMillis(Clock.systemUTC().millis() - startTime);
-                System.out.printf("%d:%d:%d have passed since the start of the program%n",
-                        duration.toHours(), duration.toMinutes(), duration.toSeconds());
-            }
-        };
+        var executor1sec = Executors.newSingleThreadScheduledExecutor();
+        var executor5sec = Executors.newSingleThreadScheduledExecutor();
 
-        TimerTask print5SecMsg = new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println("5 seconds have passed");
-            }
-        };
+        executor1sec.scheduleAtFixedRate(() -> {
+            Duration duration = Duration.ofMillis(Clock.systemUTC().millis() - startTime);
+            System.out.printf("%d:%d:%d have passed since the start of the program%n",
+                    duration.toHours(), duration.toMinutes(), duration.toSeconds());
+        }, 0, 1, TimeUnit.SECONDS);
 
-        Timer timer1Sec = new Timer();
-        Timer timer5Sec = new Timer();
-
-        timer1Sec.schedule(printTimeDuration, 1, 1000);
-        timer5Sec.schedule(print5SecMsg, 5000, 5000);
+        executor5sec.scheduleAtFixedRate(() -> System.out.println("5 seconds have passed"),
+                5, 5, TimeUnit.SECONDS);
 
         try {
-            Thread.sleep(programLifeTime);
+            Thread.currentThread().join(programLifeTime);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        timer1Sec.cancel();
-        timer5Sec.cancel();
+        executor1sec.shutdown();
+        executor5sec.shutdown();
 
     }
+
 }
